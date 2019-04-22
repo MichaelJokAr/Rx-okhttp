@@ -50,6 +50,12 @@ public final class ResultObservable<T> extends Observable<T> {
             if (response.isSuccessful()) {
                 try {
                     String string = response.body().string();
+                    if (type == null) {
+                        //解析失败,返回string
+                        observer.onNext((R) string);
+                        response.close();
+                        return;
+                    }
                     try {
                         //先使用gson解析
                         Gson gson = new Gson();
@@ -100,13 +106,8 @@ public final class ResultObservable<T> extends Observable<T> {
                 R r = JSONObject.parseObject(string, type);
                 observer.onNext(r);
             } catch (NoClassDefFoundError noClassDefFoundError) {
-                //解析失败
-                terminated = true;
-                try {
-                    observer.onError(noClassDefFoundError);
-                } catch (Exception inner2) {
-                    RxJavaPlugins.onError(new CompositeException(noClassDefFoundError, inner2));
-                }
+                //解析失败,返回string
+                observer.onNext((R) string);
             } catch (Exception inner) {
                 //解析失败
                 terminated = true;
