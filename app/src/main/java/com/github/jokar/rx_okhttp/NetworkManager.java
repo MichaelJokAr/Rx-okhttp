@@ -13,13 +13,9 @@ import okhttp3.OkHttpClient;
 public class NetworkManager {
     private static volatile NetworkManager instance;
     private OkHttpClient mOkHttpClient;
-    private GET get;
-    private POST post;
 
     public NetworkManager(Context context) {
         mOkHttpClient = getClient(context);
-        get = new GET(mOkHttpClient);
-        post = new POST(mOkHttpClient);
     }
 
     private static OkHttpClient getClient(Context context) {
@@ -44,10 +40,10 @@ public class NetworkManager {
     }
 
     public GET get() {
-        return get;
+        return new GET(mOkHttpClient);
     }
 
     public POST post() {
-        return post;
+        return new POST(mOkHttpClient);
     }
 }
