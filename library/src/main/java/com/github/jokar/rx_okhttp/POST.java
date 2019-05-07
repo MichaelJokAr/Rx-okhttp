@@ -115,27 +115,26 @@ public class POST extends HTTP {
     /**
      * 构建请求参数
      *
-     * @param BodyParams
+     * @param bodyParams
      * @return
      */
-    private RequestBody setRequestBody(Map<String, String> BodyParams) {
-        RequestBody body = null;
+    private RequestBody setRequestBody(Map<String, String> bodyParams) {
         MultipartBody.Builder formEncodingBuilder = new MultipartBody.Builder();
-        if (BodyParams != null) {
-            Iterator<String> iterator = BodyParams.keySet().iterator();
+        if (bodyParams != null) {
+            Iterator<String> iterator = bodyParams.keySet().iterator();
             String key = "";
             while (iterator.hasNext()) {
                 key = iterator.next();
-                formEncodingBuilder.addFormDataPart(key, BodyParams.get(key));
+                if (key != null && bodyParams.get(key) != null) {
+                    formEncodingBuilder.addFormDataPart(key, bodyParams.get(key));
+                }
             }
         }
         //设置类型
         if (mType != null) {
             formEncodingBuilder.setType(mType);
         }
-        body = formEncodingBuilder
-                .build();
-        return body;
+        return formEncodingBuilder.build();
 
     }
 }
