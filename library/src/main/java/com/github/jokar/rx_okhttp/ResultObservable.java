@@ -1,7 +1,5 @@
 package com.github.jokar.rx_okhttp;
 
-import com.alibaba.fastjson.JSONObject;
-import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
 
@@ -58,7 +56,7 @@ public final class ResultObservable<T> extends Observable<T> {
                     }
                     try {
                         //先使用gson解析
-                        Gson gson = new Gson();
+                        com.google.gson.Gson gson = new com.google.gson.Gson();
                         R r = gson.fromJson(string, type);
                         gson = null;
                         observer.onNext(r);
@@ -103,7 +101,7 @@ public final class ResultObservable<T> extends Observable<T> {
          */
         private void analysisForFastjson(String string) {
             try {
-                R r = JSONObject.parseObject(string, type);
+                R r = com.alibaba.fastjson.JSONObject.parseObject(string, type);
                 observer.onNext(r);
             } catch (NoClassDefFoundError noClassDefFoundError) {
                 //解析失败,返回string
