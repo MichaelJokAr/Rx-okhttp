@@ -67,9 +67,9 @@ public final class ResultObservable<T> extends Observable<T> {
                         //解析失败
                         terminated = true;
                         try {
-                            observer.onError(e);
+                            observer.onError(new JsonException(string, e));
                         } catch (Exception inner) {
-                            RxJavaPlugins.onError(new CompositeException(e, inner));
+                            RxJavaPlugins.onError(new JsonException(string, new CompositeException(e, inner)));
                         }
                     }
                 } catch (Exception e) {
@@ -111,9 +111,9 @@ public final class ResultObservable<T> extends Observable<T> {
                 //解析失败
                 terminated = true;
                 try {
-                    observer.onError(inner);
+                    observer.onError(new JsonException(string, inner));
                 } catch (Exception inner2) {
-                    RxJavaPlugins.onError(new CompositeException(inner, inner2));
+                    RxJavaPlugins.onError(new JsonException(string, new CompositeException(inner, inner2)));
                 }
             }
         }
