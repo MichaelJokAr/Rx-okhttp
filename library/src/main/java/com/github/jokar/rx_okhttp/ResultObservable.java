@@ -83,6 +83,7 @@ public final class ResultObservable<T> extends Observable<T> {
                     response.close();
                 }
             } else {
+                response.close();
                 //没有请求成功
                 terminated = true;
                 Throwable t = new HttpException(response);
