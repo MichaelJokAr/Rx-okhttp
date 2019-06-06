@@ -28,7 +28,7 @@ public class CallEnqueueObservable extends Observable<Response> {
         CallCallback callCallback = new CallCallback(mCall, observer);
         observer.onSubscribe(callCallback);
         if (!callCallback.isDisposed()) {
-            mCall.enqueue(callCallback);
+            mCall.clone().enqueue(callCallback);
         }
     }
 
