@@ -59,7 +59,14 @@ public final class ResultObservable<T> extends Observable<T> {
                         com.google.gson.Gson gson = new com.google.gson.Gson();
                         R r = gson.fromJson(string, type);
                         gson = null;
-                        observer.onNext(r);
+
+                        if (r != null) {
+                            observer.onNext(r);
+                        } else {
+                            //解析失败
+                            terminated = true;
+                            observer.onError(new JsonException("analysis fail, value is null"));
+                        }
                     } catch (NoClassDefFoundError error) {
                         //没有导包。使用fastjson解析
                         analysisForFastjson(string);
@@ -103,7 +110,13 @@ public final class ResultObservable<T> extends Observable<T> {
         private void analysisForFastjson(String string) {
             try {
                 R r = com.alibaba.fastjson.JSONObject.parseObject(string, type);
-                observer.onNext(r);
+                if (r != null) {
+                    observer.onNext(r);
+                } else {
+                    //解析失败
+                    terminated = true;
+                    observer.onError(new JsonException("analysis fail, value is null"));
+                }
             } catch (NoClassDefFoundError noClassDefFoundError) {
                 //解析失败,返回string
                 observer.onNext((R) string);
