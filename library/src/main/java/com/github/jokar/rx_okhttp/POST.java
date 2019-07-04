@@ -33,12 +33,52 @@ public class POST extends HTTP<POST> {
      * @return
      */
     public <T> Observable<T> post(Type type, String url) {
-        ResultObservable<T> observable = adapt(type, url, false);
+        ResultObservable<T> observable = adapt(type, url, setRequestBody(), false);
         return rxAdapter(observable);
     }
 
 
+    /**
+     * content-type 同步json请求
+     *
+     * @param type
+     * @param url
+     * @param json
+     * @param <T>
+     * @return
+     */
+    public <T> Observable<T> post(Type type, String url, String json) {
+        ResultObservable<T> observable = adapt(type, url, jsonRequestBody(json),
+                false);
+        return rxAdapter(observable);
+    }
 
+    /**
+     * content-type 异步json请求
+     *
+     * @param type 返回参数类型
+     * @param url  地址
+     * @param json
+     * @param <T>
+     * @return
+     */
+    public <T> Observable<T> postAsync(Type type, String url, String json) {
+
+        ResultObservable<T> observable = adapt(type, url, jsonRequestBody(json),
+                true);
+        return rxAdapter(observable);
+    }
+
+    /**
+     * 返回json body
+     *
+     * @param json
+     * @return
+     */
+    private RequestBody jsonRequestBody(String json) {
+        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        return RequestBody.create(JSON, json);
+    }
     /**
      * 设置类型
      *
@@ -59,7 +99,7 @@ public class POST extends HTTP<POST> {
      */
     public <T> Observable<T> postAsync(Type type, String url) {
 
-        ResultObservable<T> observable = adapt(type, url, true);
+        ResultObservable<T> observable = adapt(type, url, setRequestBody(), true);
         return rxAdapter(observable);
     }
 
@@ -72,9 +112,8 @@ public class POST extends HTTP<POST> {
      * @param <T>
      * @return
      */
-    private <T> ResultObservable<T> adapt(Type type, String url, boolean async) {
-        //1构造RequestBody
-        RequestBody body = setRequestBody();
+    private <T> ResultObservable<T> adapt(Type type, String url, RequestBody body,
+                                          boolean async) {
         //构造httpBuilder
         HttpUrl.Builder httpBuilder = HttpUrl.parse(url).newBuilder();
         //2 构造Request
@@ -107,22 +146,22 @@ public class POST extends HTTP<POST> {
      * @return
      */
     private RequestBody setRequestBody() {
-        MultipartBody.Builder formEncodingBuilder = new MultipartBody.Builder();
+        MultipartBody.Builder multipartBodyBuilder = new MultipartBody.Builder();
         if (getBodyMap() != null) {
             Iterator<String> iterator = getBodyMap().keySet().iterator();
             String key = "";
             while (iterator.hasNext()) {
                 key = iterator.next();
                 if (key != null && getBodyMap().get(key) != null) {
-                    formEncodingBuilder.addFormDataPart(key, getBodyMap().get(key));
+                    multipartBodyBuilder.addFormDataPart(key, getBodyMap().get(key));
                 }
             }
         }
         //设置类型
         if (mType != null) {
-            formEncodingBuilder.setType(mType);
+            multipartBodyBuilder.setType(mType);
         }
-        return formEncodingBuilder.build();
+        return multipartBodyBuilder.build();
 
     }
 }
