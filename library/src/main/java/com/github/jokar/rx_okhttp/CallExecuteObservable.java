@@ -28,12 +28,10 @@ public class CallExecuteObservable extends Observable<Response> {
         //
         boolean terminated = false;
         try {
-
             Response execute = mCall.execute();
             if (!disposable.isDisposed()) {
                 observer.onNext(execute);
             }
-
             //
             if (!disposable.isDisposed()) {
                 terminated = true;
@@ -42,7 +40,7 @@ public class CallExecuteObservable extends Observable<Response> {
         } catch (Throwable throwable) {
             if (terminated) {
                 RxJavaPlugins.onError(throwable);
-            } else {
+            } else if(!disposable.isDisposed()) {
                 try {
                     observer.onError(throwable);
                 } catch (Exception e) {

@@ -57,7 +57,7 @@ public class CallEnqueueObservable extends Observable<Response> {
 
         @Override
         public void onFailure(Call call, IOException e) {
-            if (call.isCanceled()) {
+            if (call.isCanceled() || disposed) {
                 return;
             }
             try {
