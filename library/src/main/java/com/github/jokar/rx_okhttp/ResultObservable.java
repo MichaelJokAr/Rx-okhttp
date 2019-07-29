@@ -2,13 +2,18 @@ package com.github.jokar.rx_okhttp;
 
 
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.exceptions.CompositeException;
 import io.reactivex.plugins.RxJavaPlugins;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.Buffer;
 
 /**
  * 解析数据，返回泛型数据
@@ -17,25 +22,30 @@ import okhttp3.Response;
 public final class ResultObservable<T> extends Observable<T> {
     private final Observable<Response> upstream;
     private final Type mType;
+    private Request mRequest;
 
-    public ResultObservable(Observable<Response> upstream, Type type) {
+    public ResultObservable(Observable<Response> upstream, Type type,
+                            Request request) {
         this.upstream = upstream;
         mType = type;
+        mRequest = request;
     }
 
     @Override
     protected void subscribeActual(Observer<? super T> observer) {
-        upstream.subscribe(new ResultObserver(observer, mType));
+        upstream.subscribe(new ResultObserver(observer, mType, mRequest));
     }
 
     private static class ResultObserver<R> implements Observer<Response> {
         private final Observer<? super R> observer;
         private final Type type;
         private boolean terminated;
+        private Request request;
 
-        public ResultObserver(Observer<? super R> observer, Type type) {
+        public ResultObserver(Observer<? super R> observer, Type type, Request request) {
             this.observer = observer;
             this.type = type;
+            this.request = request;
         }
 
         @Override
@@ -65,7 +75,7 @@ public final class ResultObservable<T> extends Observable<T> {
                         } else {
                             //解析失败
                             terminated = true;
-                            observer.onError(new JsonException("analysis fail, value is null"));
+                            observer.onError(new JsonException(getUrl(), getParams(), string));
                         }
                     } catch (NoClassDefFoundError error) {
                         //没有导包。使用fastjson解析
@@ -74,9 +84,10 @@ public final class ResultObservable<T> extends Observable<T> {
                         //解析失败
                         terminated = true;
                         try {
-                            observer.onError(new JsonException(string, e));
+                            observer.onError(new JsonException(getUrl(), getParams(), string, e));
                         } catch (Exception inner) {
-                            RxJavaPlugins.onError(new JsonException(string, new CompositeException(e, inner)));
+                            RxJavaPlugins.onError(new JsonException(getUrl(), getParams(), string,
+                                    new CompositeException(e, inner)));
                         }
                     }
                 } catch (Exception e) {
@@ -115,7 +126,7 @@ public final class ResultObservable<T> extends Observable<T> {
                 } else {
                     //解析失败
                     terminated = true;
-                    observer.onError(new JsonException("analysis fail, value is null"));
+                    observer.onError(new JsonException(getUrl(), getParams(), string));
                 }
             } catch (NoClassDefFoundError noClassDefFoundError) {
                 //解析失败,返回string
@@ -124,9 +135,10 @@ public final class ResultObservable<T> extends Observable<T> {
                 //解析失败
                 terminated = true;
                 try {
-                    observer.onError(new JsonException(string, inner));
+                    observer.onError(new JsonException(getUrl(), getParams(), string, inner));
                 } catch (Exception inner2) {
-                    RxJavaPlugins.onError(new JsonException(string, new CompositeException(inner, inner2)));
+                    RxJavaPlugins.onError(new JsonException(getUrl(), getParams(), string,
+                            new CompositeException(inner, inner2)));
                 }
             }
         }
@@ -149,6 +161,41 @@ public final class ResultObservable<T> extends Observable<T> {
             if (!terminated) {
                 observer.onComplete();
             }
+        }
+
+        /**
+         * 请求链接
+         *
+         * @return
+         */
+        private String getUrl() {
+            return request.url().toString();
+        }
+
+        /**
+         * 请求参数
+         *
+         * @return
+         */
+        private String getParams() {
+            RequestBody requestBody = request.body();
+            try {
+                if ("POST".equals(request.method()) && requestBody.contentLength() > 0) {
+                    StringBuilder sb = new StringBuilder();
+                    Buffer buffer = new Buffer();
+                    requestBody.writeTo(buffer);
+                    Charset charset = Charset.forName("UTF-8");
+                    MediaType contentType = requestBody.contentType();
+                    if (contentType != null) {
+                        charset = contentType.charset(Charset.forName("UTF-8"));
+                    }
+                    sb.append(buffer.readString(charset));
+                    return sb.toString();
+                }
+            } catch (Exception e) {
+
+            }
+            return "";
         }
     }
 }

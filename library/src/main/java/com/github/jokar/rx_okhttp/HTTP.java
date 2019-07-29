@@ -40,8 +40,7 @@ public class HTTP<T extends HTTP> {
         Observable<Response> responseObservable = async
                 ? new CallEnqueueObservable(call)
                 : new CallExecuteObservable(call);
-
-        return new ResultObservable<>(responseObservable, type);
+        return new ResultObservable<>(responseObservable, type, request);
     }
 
     public <T> Observable<T> rxAdapter(Observable<T> source) {
