@@ -1,6 +1,5 @@
 package com.github.jokar.rx_okhttp;
 
-
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
@@ -64,32 +63,8 @@ public final class ResultObservable<T> extends Observable<T> {
                         response.close();
                         return;
                     }
-                    try {
-                        //先使用gson解析
-                        com.google.gson.Gson gson = new com.google.gson.Gson();
-                        R r = gson.fromJson(string, type);
-                        gson = null;
-
-                        if (r != null) {
-                            observer.onNext(r);
-                        } else {
-                            //解析失败
-                            terminated = true;
-                            observer.onError(new JsonException(getUrl(), getParams(), string));
-                        }
-                    } catch (NoClassDefFoundError error) {
-                        //没有导包。使用fastjson解析
-                        analysisForFastjson(string);
-                    } catch (Exception e) {
-                        //解析失败
-                        terminated = true;
-                        try {
-                            observer.onError(new JsonException(getUrl(), getParams(), string, e));
-                        } catch (Exception inner) {
-                            RxJavaPlugins.onError(new JsonException(getUrl(), getParams(), string,
-                                    new CompositeException(e, inner)));
-                        }
-                    }
+                    //先使用fastjson解析
+                    analysisForFastjson(string);
                 } catch (Exception e) {
                     terminated = true;
                     try {
@@ -114,6 +89,41 @@ public final class ResultObservable<T> extends Observable<T> {
         }
 
         /**
+         * 使用gson解析
+         *
+         * @param string
+         */
+        private void analysisForGson(String string) {
+            try {
+                //先使用gson解析
+                com.google.gson.Gson gson = new com.google.gson.Gson();
+                R r = gson.fromJson(string, type);
+                gson = null;
+
+                if (r != null) {
+                    observer.onNext(r);
+                } else {
+                    //解析失败
+                    terminated = true;
+                    observer.onError(new JsonException(getUrl(), getParams(), string));
+                }
+            } catch (NoClassDefFoundError error) {
+
+                //解析失败,返回string
+                observer.onNext((R) string);
+            } catch (Exception e) {
+                //解析失败
+                terminated = true;
+                try {
+                    observer.onError(new JsonException(getUrl(), getParams(), string, e));
+                } catch (Exception inner) {
+                    RxJavaPlugins.onError(new JsonException(getUrl(), getParams(), string,
+                            new CompositeException(e, inner)));
+                }
+            }
+        }
+
+        /**
          * 使用fastjson解析
          *
          * @param string
@@ -129,8 +139,8 @@ public final class ResultObservable<T> extends Observable<T> {
                     observer.onError(new JsonException(getUrl(), getParams(), string));
                 }
             } catch (NoClassDefFoundError noClassDefFoundError) {
-                //解析失败,返回string
-                observer.onNext((R) string);
+                //没有导包。使用fastjson解析
+                analysisForGson(string);
             } catch (Exception inner) {
                 //解析失败
                 terminated = true;
